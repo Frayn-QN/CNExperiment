@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
     }
 
     // 定义部分
+    
 
     // 安装SIGINT信号处理器
     struct sigaction sa;
@@ -31,7 +32,11 @@ int main(int argc, char** argv) {
     sigemptyset(&sa.sa_mask);
     sigaction(SIGINT, &sa, NULL);
 
-    // 设置socket
+    // 设置服务器地址
+    struct sockaddr_in server_addr;  
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(argv[1]);
+    server_addr.sin_port = htons(argv[2]);
     
     
 
