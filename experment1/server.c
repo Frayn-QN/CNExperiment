@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     sigaction(SIGINT, &sa, NULL);
 
     // 设置服务器地址
-    struct sockaddr_in server_addr;  
+    struct sockaddr_in server_addr;
     socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
