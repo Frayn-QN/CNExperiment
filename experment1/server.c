@@ -161,9 +161,9 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        printf("[srv] client[%s:%d] is accepted!\n", client_ip, ntohs(client_address.sin_port));
+        printf("[srv] client[%s:%d] is accepted!\n", client_ip, ntohs(client_addr.sin_port));
         server_func(connfd, server_vcd);
-        printf("[srv] client[%s:%d] is closed!\n", client_ip, ntohs(client_address.sin_port));
+        printf("[srv] client[%s:%d] is closed!\n", client_ip, ntohs(client_addr.sin_port));
         close(connfd);
     }
     
