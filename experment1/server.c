@@ -68,8 +68,10 @@ ssize_t rio_writen(int fd, void *usrbuf, size_t n)//无缓冲输出
 
 
 void server_func(int connfd, const char* vcd) {
-    char buf[MAXLINE] = {0};
     while(1) {
+        char buf[MAXLINE] = {0};
+
+        // 接收消息
         int valread = rio_readn(connfd, buf, MAXLINE);
         if(valread <= 0) {
             if (valread == -1){
@@ -77,8 +79,10 @@ void server_func(int connfd, const char* vcd) {
             }
             break;
         }
-        printf("[ECH_RQT]%s", buf);
-        sprintf(buf, "(%s)%s", vcd, buf);
+        printf("[ECH_RQT]%s\n", buf);
+
+        // 发送回声
+        sprintf(buf, "(%s)%s\0", vcd, buf);
         if(rio_writen(connfd, buf, strlen(buf)) == -1) {
             perror("rio_writen error");
             break;

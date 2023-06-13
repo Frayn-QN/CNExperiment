@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define MAXLINE 120
+#define MAXLINE 140
 
 ssize_t rio_readn(int fd, void *usrbuf, size_t n)//无缓冲输入
 {
@@ -61,8 +61,9 @@ ssize_t rio_writen(int fd, void *usrbuf, size_t n)//无缓冲输出
 }
 
 void client_func(int connfd) {
-    char buf[MAXLINE] = {0};
     while(1) {
+        char buf[MAXLINE] = {0};
+
         if(fgets(buf, MAXLINE, stdin) == NULL) {
             perror("fgets error");
             break;
@@ -72,6 +73,21 @@ void client_func(int connfd) {
         if(strcmp(buf, "EXIT\n") == 0) {
             break;
         }
+
+        printf("[ECH_RQT]%s\n", buf);
+        
+        // 发送消息
+        if(rio_writen(connfd, buf, strlen(buf)) == -1) {
+            perror("rio_writen error");
+            break;
+        }
+        memset(buf, 0, MAXLINE);
+
+        // 接收回声
+        if(rio_readn(connfd, buf, MAXLINE) == -1) {
+            perror("rio_readn error");
+        }
+        printf("[ECH_REP]%s\n", buf);
     }
 }
 
@@ -115,5 +131,7 @@ int main(int argc, char** argv) {
     
     // 关闭连接
     close(connfd);
+    printf("[cli] connfd is closed!\n");
+    printf("[cli] client is to return!\n");
     return 0;
 }
