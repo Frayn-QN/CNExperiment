@@ -67,10 +67,22 @@ ssize_t rio_writen(int fd, void *usrbuf, size_t n)//无缓冲输出
 }
 
 
-void server_func(int connfd) {
+void server_func(int connfd, const char* vcd) {
+    char buf[MAXLINE] = {0};
     while(1) {
-        char buf[MAXLINE];
-        
+        int valread = rio_readn(connfd, buf, MAXLINE);
+        if(valread <= 0) {
+            if (valread == -1){
+                perror("rio_readn error");
+            }
+            break;
+        }
+        printf("[ECH_RQT]%s", buf);
+        sprintf(buf, "(%s)%s", vcd, buf);
+        if(rio_writen(connfd, buf, strlen(buf)) == -1) {
+            perror("rio_writen error");
+            break;
+        }
     }
 }
 
@@ -97,7 +109,7 @@ int main(int argc, char** argv) {
     socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    if(inet_pton(AF_IENT, server_ip, &server_addr.sin_addr.s_addr) <= 0) {
+    if(inet_pton(AF_IENT, server_ip, &server_addr.sin_addr) <= 0) {
         perror("inet_pton error");
         return 1;
     }
@@ -145,11 +157,14 @@ int main(int argc, char** argv) {
         }
 
         printf("[srv] client[%s:%d] is accepted!\n", client_ip, ntohs(client_address.sin_port));
-        server_func(connfd);
+        server_func(connfd, server_vcd);
         printf("[srv] client[%s:%d] is closed!\n", client_ip, ntohs(client_address.sin_port));
         close(connfd);
     }
     
     close(listenfd);
+    printf("[srv] listenfd is closed!\n");
+    printf("[srv] server is to return!\n");
+
     return 0;
 }
