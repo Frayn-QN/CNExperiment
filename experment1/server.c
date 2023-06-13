@@ -19,73 +19,25 @@ void handle_sigint(int sig) {
     sigint_flag = 1;
 }
 
-ssize_t rio_readn(int fd, void *usrbuf, size_t n)//无缓冲输入
-{
-	size_t nleft = n;
-	ssize_t nread;
-	char *bufp = (char*)usrbuf;
-	
-	while(nleft > 0)
-	{
-		if((nread = read(fd, bufp, nleft)) < 0)
-		{
-			if(errno == EINTR)
-				nread = 0;
-			else
-				return -1;
-		}
-		else if(nread == 0)
-			break;/*EOF*/
-		
-		nleft -= nread;
-		bufp += nread;
-	}
-	
-	return (n - nleft);
-}
-
-ssize_t rio_writen(int fd, void *usrbuf, size_t n)//无缓冲输出
-{
-	size_t nleft = n;
-	ssize_t nwritten;
-	char *bufp = (char*)usrbuf;
-	
-	while(nleft > 0)
-	{
-		if((nwritten = write(fd, bufp, nleft)) <= 0)
-		{
-			if(errno == EINTR)
-				nwritten = 0;
-			else
-				return -1;
-		}
-		
-		nleft -= nwritten;
-		bufp += nwritten;
-	}
-	
-	return n;
-}
-
-
 void server_func(int connfd, const char* vcd) {
     while(1) {
         char buf[MAXLINE] = {0};
 
         // 接收消息
-        int valread = rio_readn(connfd, buf, MAXLINE);
+        int valread = read(connfd, buf, MAXLINE);
         if(valread <= 0) {
             if (valread == -1){
-                perror("rio_readn error");
+                perror("read error");
             }
             break;
         }
-        printf("[ECH_RQT]%s\n", buf);
+        printf("[ECH_RQT]%s", buf);
 
         // 发送回声
-        sprintf(buf, "(%s)%s\0", vcd, buf);
-        if(rio_writen(connfd, buf, strlen(buf)) == -1) {
-            perror("rio_writen error");
+        char rep[MAXLINE] = {0};
+        sprintf(rep, "(%s)%s", vcd, buf);
+        if(write(connfd, rep, strlen(rep)) == -1) {
+            perror("write error");
             break;
         }
     }
@@ -93,7 +45,7 @@ void server_func(int connfd, const char* vcd) {
 
 int main(int argc, char** argv) {
     if(argc != 4) {
-        printf("Usage: %s <ip_address> <port> <vcd>\n", argv[0]);
+        printf("Usage: %s <ip_address> <port> <veri_code>\n", argv[0]);
         return 1;
     }
 
@@ -138,12 +90,15 @@ int main(int argc, char** argv) {
         perror("listen error");
         return 1;
     }
-    printf("[srv] server[%s:%s][%s] [%s] is initializing!\n", server_ip, server_port, server_vcd);
+    printf("[srv] server[%s:%s][%s] is initializing!\n", server_ip, server_port, server_vcd);
 
     // 受理业务
     while(!sigint_flag) {
         int connfd = accept(listenfd, (struct sockaddr *)&server_addr, &server_addrlen);
         if(connfd == -1) {
+            if(errno == EINTR) {
+                continue;
+            }
             perror("accept error");
             return 1;
         }

@@ -12,54 +12,6 @@
 
 #define MAXLINE 140
 
-ssize_t rio_readn(int fd, void *usrbuf, size_t n)//无缓冲输入
-{
-	size_t nleft = n;
-	ssize_t nread;
-	char *bufp = (char*)usrbuf;
-	
-	while(nleft > 0)
-	{
-		if((nread = read(fd, bufp, nleft)) < 0)
-		{
-			if(errno == EINTR)
-				nread = 0;
-			else
-				return -1;
-		}
-		else if(nread == 0)
-			break;/*EOF*/
-		
-		nleft -= nread;
-		bufp += nread;
-	}
-	
-	return (n - nleft);
-}
-
-ssize_t rio_writen(int fd, void *usrbuf, size_t n)//无缓冲输出
-{
-	size_t nleft = n;
-	ssize_t nwritten;
-	char *bufp = (char*)usrbuf;
-	
-	while(nleft > 0)
-	{
-		if((nwritten = write(fd, bufp, nleft)) <= 0)
-		{
-			if(errno == EINTR)
-				nwritten = 0;
-			else
-				return -1;
-		}
-		
-		nleft -= nwritten;
-		bufp += nwritten;
-	}
-	
-	return n;
-}
-
 void client_func(int connfd) {
     while(1) {
         char buf[MAXLINE] = {0};
@@ -74,20 +26,20 @@ void client_func(int connfd) {
             break;
         }
 
-        printf("[ECH_RQT]%s\n", buf);
+        printf("[ECH_RQT]%s", buf);
         
         // 发送消息
-        if(rio_writen(connfd, buf, strlen(buf)) == -1) {
-            perror("rio_writen error");
+        if(write(connfd, buf, strlen(buf)) == -1) {
+            perror("write error");
             break;
         }
         memset(buf, 0, MAXLINE);
 
         // 接收回声
-        if(rio_readn(connfd, buf, MAXLINE) == -1) {
-            perror("rio_readn error");
+        if(read(connfd, buf, MAXLINE) == -1) {
+            perror("read error");
         }
-        printf("[ECH_REP]%s\n", buf);
+        printf("[ECH_REP]%s", buf);
     }
 }
 
