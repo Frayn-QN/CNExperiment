@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <signal.h>
 
 #define MAXLINE 1024
 
@@ -113,7 +114,7 @@ int main(int argc, char** argv) {
     socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    if(inet_pton(AF_IENT, server_ip, &server_addr.sin_addr) <= 0) {
+    if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
         perror("inet_pton error");
         return 1;
     }
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
     }
 
     // 监听
-    if(listen(listenfd, BACKLOG) == -1) {
+    if(listen(listenfd, 3) == -1) {
         perror("listen error");
         return 1;
     }
@@ -150,12 +151,12 @@ int main(int argc, char** argv) {
         // 获取客户端信息
         struct sockaddr_in client_addr;
         socklen_t client_addrlen = sizeof(client_addr);
-        if(getpeername(new_socket, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
+        if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
             perror("getpeername error");
             return 1;
         }
         char client_ip[INET_ADDRSTRLEN];
-        if(inet_ntop(AF_INET, &(client_address.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
+        if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");
             return 1;
         }
