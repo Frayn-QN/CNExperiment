@@ -24,6 +24,7 @@ void handle_sigchld(int sig) {
     pid_t pid_chld;
     int stat;
     while((pid_chld = waitpid(-1, &stat, WNOHANG)) > 0);
+    printf("[srv](%d)[chd](%d) Child has terminated!\n", getppid(), getpid());
 }
 
 void server_func(int connfd, const char* vcd) {
