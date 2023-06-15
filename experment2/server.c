@@ -23,7 +23,7 @@ void handle_sigint(int sig) {
 void handle_sigchld(int sig) {
     pid_t child_pid;
     int stat;
-    printf("[srv](%d)[chd](%d) Child has terminated!\n", getppid(), grtpid());
+    printf("[srv](%d)[chd](%d) Child has terminated!\n", getppid(), getpid());
     while((child_pid = waitpid(-1, &stat, WNOHANG)) > 0);
 }
 
