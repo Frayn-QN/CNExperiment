@@ -14,6 +14,11 @@
 
 #define MAXLINE 1024
 
+void shortToChars(short value, char* charArray) {
+    charArray[0] = (value >> 8) & 0xFF;  // 高字节
+    charArray[1] = value & 0xFF;         // 低字节
+}
+
 int sigint_flag = 0;
 void handle_sigint(int sig) {
     printf("[srv](%d) SIGINT is coming!\n", getpid());
@@ -61,8 +66,10 @@ void server_func(int connfd, int vcd, pid_t pid) {
         // 发送PDU
         short vcd_h = (short)vcd;
         short vcd_n = htons(vcd_h);
+        char vcd_c[2] = {0};
+        shortToChars(vcd_n, vcd_c)
         char rep[MAXLINE] = {0};
-        sprintf(rep, "%hd%s", vcd_n, buf);
+        sprintf(rep, "%s%s", vcd_c, buf);
         if(write(connfd, rep, strlen(rep)) == -1) {
             perror("write error");
             break;
