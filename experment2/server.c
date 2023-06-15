@@ -66,10 +66,9 @@ void server_func(int connfd, int vcd, pid_t pid) {
         // 发送PDU
         short vcd_h = (short)vcd;
         short vcd_n = htons(vcd_h);
-        char vcd_c[2] = {0};
-        shortToChars(vcd_n, vcd_c);
         char rep[MAXLINE] = {0};
-        sprintf(rep, "%s%s", vcd_c, buf);
+        memcpy(rep, &vcd_n, 2);
+        memcpy(rep+2, buf, strlen(buf));
         if(write(connfd, rep, strlen(rep)) == -1) {
             perror("write error");
             break;

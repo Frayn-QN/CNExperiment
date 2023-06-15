@@ -12,11 +12,6 @@
 
 #define MAXLINE 80
 
-void shortToChars(short value, char* charArray) {
-    charArray[0] = (value >> 8) & 0xFF;  // 高字节
-    charArray[1] = value & 0xFF;         // 低字节
-}
-
 void client_func(int connfd, int cid, pid_t pid) {
     while(1) {
        char buf[MAXLINE] = {0};
@@ -36,10 +31,9 @@ void client_func(int connfd, int cid, pid_t pid) {
         // 发送PDU
         short cid_h = (short)cid;
         short cid_n = htons(cid_h);
-        char cid_c[2] = {0};
-        shortToChars(cid_n, cid_c);
         char rep[MAXLINE] = {0};
-        sprintf(rep, "%s%s", cid_c, buf);
+        memcpy(rep, &cid_n, 2);
+        memcpy(rep+2, buf, strlen(buf));
         if(write(connfd, rep, strlen(rep)) == -1) {
             perror("write error");
             break;
