@@ -40,20 +40,34 @@ void server_func(int connfd, int vcd, pid_t pid) {
     while(1) {
         char buf[MAXLINE] = {0};
 
-        // 接收消息
-        int valread = read(connfd, buf, MAXLINE);
+        short cid_n = 0;
+        // 接收编号
+        int valread = read(connfd, &cid_n, 2);
         if(valread <= 0) {
             if (valread == -1){
                 perror("read error");
             }
             break;
         }
-        printf("[ECH_RQT]%s", buf);
+        short cid_h = ntohs(cid_n);
+
+        // 接收消息
+        if(read(connfd, &buf, MAXLINE) == -1) {
+            perror("read error");
+            break;
+        }
+        printf("[chd](%d)[cid](%d)[ECH_RQT] %s", buf);
+
+        // 发送验证码
+        short vcd_h = (short)vcd;
+        short vcd_n = htons(vcd_h);
+        if(write(connfd, &vcd_n, 2) == -1) {
+            perror("write error");
+            break;
+        }
 
         // 发送回声
-        char rep[MAXLINE] = {0};
-        sprintf(rep, "(%s)%s", vcd, buf);
-        if(write(connfd, rep, strlen(rep)) == -1) {
+        if(write(connfd, buf, strlen(buf)) == -1) {
             perror("write error");
             break;
         }
