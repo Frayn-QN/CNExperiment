@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
     sa_int.sa_flags = 0;
     sa_int.sa_handler = handle_sigint;
     sigemptyset(&sa_int.sa_mask);
-    res = sigaction(SIGINT, &sa_int, old_sa_int);
+    res = sigaction(SIGINT, &sa_int, &old_sa_int);
     if(res) {
         return -1;
     }
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     sa_pipe.sa_flags = 0;
     sa_pipe.sa_flags |= SA_RESTART;
     sa_pipe.sa_handler = handle_sigpipe;
-    sigemptyset(&sa,sa_mask);
+    sigemptyset(&sa_pipe.sa_mask);
     res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
     if(res) {
         return -3;
