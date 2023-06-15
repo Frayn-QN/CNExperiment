@@ -14,11 +14,6 @@
 
 #define MAXLINE 1024
 
-void shortToChars(short value, char* charArray) {
-    charArray[0] = (value >> 8) & 0xFF;  // 高字节
-    charArray[1] = value & 0xFF;         // 低字节
-}
-
 int sigint_flag = 0;
 void handle_sigint(int sig) {
     printf("[srv](%d) SIGINT is coming!\n", getpid());
@@ -27,11 +22,9 @@ void handle_sigint(int sig) {
 
 void handle_sigchld(int sig) {
     pid_t child_pid;
-    pid_t main_pid = getpid();
     int stat;
-    while((child_pid = waitpid(-1, &stat, WNOHANG)) > 0) {
-        printf("[srv](%d)[chd](%d) Child has terminated!\n", main_pid, child_pid);
-    }
+    printf("[srv](%d)[chd](%d) Child has terminated!\n", getppid(), grtpid());
+    while((child_pid = waitpid(-1, &stat, WNOHANG)) > 0);
 }
 
 int sig_num = 0;
