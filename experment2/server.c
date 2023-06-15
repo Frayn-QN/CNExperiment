@@ -29,6 +29,13 @@ void handle_sigchld(int sig) {
     }
 }
 
+int sig_num = 0;
+void handle_sigpipe(int sig) {
+    sig_num = sig;
+    pid_t main_pid = getpid();
+    printf("[srv](%d) SIGPIPE is coming!\n", main_pid);
+}
+
 void server_func(int connfd, int vcd, pid_t pid) {
     while(1) {
         char buf[MAXLINE] = {0};
@@ -65,26 +72,40 @@ int main(int argc, char** argv) {
     char* server_port = argv[2];
     char* server_vcd = argv[3];
     pid_t main_pid = getpid();
-    pid_t child_pid;
+    pid_t child_pid = 0;
 
+    // 信号处理
+    int res = -1;
     // 安装SIGINT信号处理器
-    struct sigaction sa;
-    sa.sa_flags = 0;
-    sa.sa_handler = handle_sigint;
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGINT, &sa, NULL);
+    struct sigaction sa_int, old_sa_int;
+    sa_int.sa_flags = 0;
+    sa_int.sa_handler = handle_sigint;
+    sigemptyset(&sa_int.sa_mask);
+    res = sigaction(SIGINT, &sa_int, old_sa_int);
+    if(res) {
+        return -1;
+    }
 
     // 安装SIGCHLD信号处理器
-    sa.sa_flags = 0;
-    sa.sa_handler = handle_sigchld;
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGCHLD, &sa, NULL);
+    struct sigaction sa_chd, old_sa_chd;
+    sa_chd.sa_flags = 0;
+    sa_chd.sa_handler = handle_sigchld;
+    sigemptyset(&sa_chd.sa_mask);
+    res = sigaction(SIGCHLD, &sa_chd, &old_sa_chd);
+    if(res) {
+        return -2;
+    }
 
     // 安装SIGPIPE信号处理器
-    sa.sa_flags = 0;
-    sa.sa_handler = SIG_IGN;
+    struct sigaction sa_pipe, old_sa_pipe;
+    sa_pipe.sa_flags = 0;
+    sa_pipe.sa_flags |= SA_RESTART;
+    sa_pipe.sa_handler = handle_sigpipe;
     sigemptyset(&sa,sa_mask);
-    sigaction(SIGPIPE, &sa, NULL);
+    res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
+    if(res) {
+        return -3;
+    }
 
     // 设置服务器地址
     struct sockaddr_in server_addr;
