@@ -28,16 +28,12 @@ void client_func(int connfd, int cid, pid_t pid) {
 
         printf("[cli](%d)[cid](%d)[ECH_RQT] %s", pid, cid, buf);
         
-        // 发送编号
+        // 发送PDU
         short cid_h = (short)cid;
         short cid_n = htons(cid_h);
-        if(write(connfd, &cid_n, 2) == -1) {
-            perror("write error");
-            break;
-        }
-
-        // 发送消息
-        if(write(connfd, buf, strlen(buf)) == -1) {
+        char rep[MAXLINE] = {0};
+        sprintf(rep, "%hd%s", cid_n, buf);
+        if(write(connfd, rep, strlen(rep)) == -1) {
             perror("write error");
             break;
         }

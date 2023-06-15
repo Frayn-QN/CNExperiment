@@ -58,16 +58,12 @@ void server_func(int connfd, int vcd, pid_t pid) {
         }
         printf("[chd](%d)[cid](%d)[ECH_RQT] %s", pid, cid_h, buf);
 
-        // 发送验证码
+        // 发送PDU
         short vcd_h = (short)vcd;
         short vcd_n = htons(vcd_h);
-        if(write(connfd, &vcd_n, 2) == -1) {
-            perror("write error");
-            break;
-        }
-
-        // 发送回声
-        if(write(connfd, buf, strlen(buf)) == -1) {
+        char rep[MAXLINE] = {0};
+        sprintf(rep, "%hd%s", vcd_n, buf);
+        if(write(connfd, rep, strlen(rep)) == -1) {
             perror("write error");
             break;
         }
