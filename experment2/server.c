@@ -56,7 +56,7 @@ void server_func(int connfd, int vcd, pid_t pid) {
             perror("read error");
             break;
         }
-        printf("[chd](%d)[cid](%d)[ECH_RQT] %s", buf);
+        printf("[chd](%d)[cid](%d)[ECH_RQT] %s", pid, cid_h, buf);
 
         // 发送验证码
         short vcd_h = (short)vcd;
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
         perror("listen error");
         return 1;
     }
-    printf("[srv](%d)[srv_sa](%s:%s)[vcd](%s) Server has initialized!\n", server_ip, server_port, server_vcd);
+    printf("[srv](%d)[srv_sa](%s:%s)[vcd](%s) Server has initialized!\n", main_pid, server_ip, server_port, server_vcd);
 
     // 受理业务
     while(!sigint_flag) {
@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
             return 1;
         }
         else if(child_pid == 0) {// 子进程
+            child_pid = getpid();
             printf("[chd](%d)[ppid](%d) Client process is created!\n", child_pid, main_pid);
             close(listenfd);
 
