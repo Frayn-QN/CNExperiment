@@ -192,10 +192,11 @@ int main(int argc, char** argv) {
             printf("[chd](%d)[ppid](%d) Client process is to return!\n", child_pid, main_pid);
             return 0;
         }
-        
+
         close(connfd);
     }
     
+    wait(NULL);
     close(listenfd);
     printf("[srv](%d) listenfd is closed!\n", main_pid);
     printf("[srv](%d) server is to return!\n", main_pid);
