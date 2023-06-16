@@ -20,13 +20,12 @@ void client_func(int connfd, int cid, pid_t pid) {
             perror("fgets error");
             break;
         }
+        printf("[cli](%d)[cid](%d)[ECH_RQT] %s", pid, cid, buf);
 
         // 结束标记 
         if(strcmp(buf, "EXIT\n") == 0) {
             break;
         }
-
-        printf("[cli](%d)[cid](%d)[ECH_RQT] %s", pid, cid, buf);
         
         // 发送PDU
         short cid_h = (short)cid;

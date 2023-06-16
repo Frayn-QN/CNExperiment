@@ -12,7 +12,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#define MAXLINE 1024
+#define MAXLINE 256
 
 int sigint_flag = 0;
 void handle_sigint(int sig) {

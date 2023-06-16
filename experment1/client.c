@@ -20,13 +20,12 @@ void client_func(int connfd) {
             perror("fgets error");
             break;
         }
+        printf("[ECH_RQT]%s", buf);
 
         // 结束标记 
         if(strcmp(buf, "EXIT\n") == 0) {
             break;
         }
-
-        printf("[ECH_RQT]%s", buf);
         
         // 发送消息
         if(write(connfd, buf, strlen(buf)) == -1) {
