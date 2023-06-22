@@ -17,16 +17,9 @@ void client_func(int connfd, int cid, pid_t pid) {
         char buf[MAXLINE] = {0};
 
         // 读取命令行
-        for (size_t i = 0; i < 60; i++)
-        {
-            char c = getchar();
-            if (c == '\n')
-            {
-                buf[i] = c;
-                buf[i+1] = 0;
-                break;
-            }
-            buf[i] = c;
+        if(fgets(buf, 60, stdin) == NULL) {
+            perror("fgets error");
+            break;
         }
         
         if(buf[59] != '\0' && buf[59] != '\n') {
