@@ -156,6 +156,7 @@ int main(int argc, char** argv) {
         int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &client_addrlen);
         if(connfd == -1) {
             if(errno == EINTR) {
+                waitpid(-1, NULL, 0);
                 continue;
             }
             perror("accept error");
@@ -193,7 +194,6 @@ int main(int argc, char** argv) {
         }
         else {
             close(connfd);
-            waitpid(child_pid, NULL, 0);
         }
     }
 
