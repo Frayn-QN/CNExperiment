@@ -152,10 +152,10 @@ int main(int argc, char** argv) {
     socklen_t client_addrlen = sizeof(client_addr);
     // 受理业务
     while(!sigint_flag) {
+        memset(&client_addr, 0, client_addrlen);
         int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &client_addrlen);
         if(connfd == -1) {
             if(errno == EINTR) {
-                waitpid(-1, NULL, 0);
                 continue;
             }
             perror("accept error");
@@ -163,11 +163,6 @@ int main(int argc, char** argv) {
         }
 
         // 获取客户端信息
-        
-        if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
-            perror("getpeername error");
-            return 1;
-        }
         char client_ip[INET_ADDRSTRLEN];
         if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");
@@ -198,6 +193,7 @@ int main(int argc, char** argv) {
         }
         else {
             close(connfd);
+            waitpid(child_pid, NULL, 0);
         }
     }
 
