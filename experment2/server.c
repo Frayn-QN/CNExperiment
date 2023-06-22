@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     }
 
     // 监听
-    if(listen(listenfd, MAX_CONN) == -1) {
+    if(listen(listenfd, MAXCONN) == -1) {
         perror("listen error");
         return 1;
     }
