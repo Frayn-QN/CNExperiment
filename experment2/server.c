@@ -121,10 +121,7 @@ int main(int argc, char** argv) {
     socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        perror("inet_pton error");
-        return 1;
-    }
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
     
 
     // 创建socket
