@@ -17,7 +17,7 @@ void client_func(int connfd, int cid, pid_t pid) {
         char buf[MAXLINE] = {0};
 
         // 读取命令行
-        if(fgets(buf, 60, stdin) == NULL) {
+        if(fgets(buf, MAXLINE, stdin) == NULL) {
             perror("fgets error");
             break;
         }

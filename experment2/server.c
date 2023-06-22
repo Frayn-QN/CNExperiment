@@ -195,6 +195,7 @@ int main(int argc, char** argv) {
         }
         else {
             close(connfd);
+            waitpid(child_pid, NULL, 0);
         }
     }
 
