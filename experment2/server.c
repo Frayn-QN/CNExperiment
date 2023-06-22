@@ -5,12 +5,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <netdb.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <bits/sigaction.h>
+#include <netinet/in.h>
 
 #define MAXLINE 256
 
@@ -121,7 +122,7 @@ int main(int argc, char** argv) {
     socklen_t client_addrlen = sizeof(client_addr);
     // 受理业务
     while(!sigint_flag) {
-        int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &sclient_addrlen);
+        int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &client_addrlen);
         if(connfd == -1) {
             if(errno == EINTR) {
                 waitpid(-1, NULL, 0);
