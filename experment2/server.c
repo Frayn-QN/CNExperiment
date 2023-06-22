@@ -10,10 +10,9 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/wait.h>
-#include <bits/sigaction.h>
-#include <netinet/in.h>
 
 #define MAXLINE 256
+#define MAXCONN 6
 
 int sigint_flag = 0;
 void handle_sigint(int sig) {
