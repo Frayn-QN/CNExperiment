@@ -83,42 +83,15 @@ int main(int argc, char** argv) {
     pid_t main_pid = getpid();
     pid_t child_pid = 0;
 
-    // 信号处理
-    int res = -1;
     // 安装SIGINT信号处理器
-    struct sigaction sa_int, old_sa_int;
-    sa_int.sa_flags = 0;
-    sa_int.sa_handler = handle_sigint;
-    sigemptyset(&sa_int.sa_mask);
-    res = sigaction(SIGINT, &sa_int, &old_sa_int);
-    if(res) {
-        return -1;
-    }
-
-    // 安装SIGCHLD信号处理器
-    struct sigaction sa_chd, old_sa_chd;
-    sa_chd.sa_flags = 0;
-    sa_chd.sa_handler = handle_sigchld;
-    sigemptyset(&sa_chd.sa_mask);
-    res = sigaction(SIGCHLD, &sa_chd, &old_sa_chd);
-    if(res) {
-        return -2;
-    }
-
-    // 安装SIGPIPE信号处理器
-    struct sigaction sa_pipe, old_sa_pipe;
-    sa_pipe.sa_flags = 0;
-    sa_pipe.sa_flags |= SA_RESTART;
-    sa_pipe.sa_handler = handle_sigpipe;
-    sigemptyset(&sa_pipe.sa_mask);
-    res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
-    if(res) {
-        return -3;
-    }
+    struct sigaction sa;
+    sa.sa_flags = 0;
+    sa.sa_handler = handle_sigint;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT, &sa, NULL);
 
     // 设置服务器地址
     struct sockaddr_in server_addr;
-    socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
     server_addr.sin_addr.s_addr = inet_addr(server_ip);
@@ -132,21 +105,23 @@ int main(int argc, char** argv) {
     }
 
     // 绑定socket
-    if(bind(listenfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
+    if(bind(listenfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("bind error");
         return 1;
     }
 
     // 监听
-    if(listen(listenfd, 3) == -1) {
+    if(listen(listenfd, MAX_CONN) == -1) {
         perror("listen error");
         return 1;
     }
     printf("[srv](%d)[srv_sa](%s:%s)[vcd](%s) Server has initialized!\n", main_pid, server_ip, server_port, server_vcd);
 
+    struct sockaddr_in client_addr;
+    socklen_t client_addrlen = sizeof(client_addr);
     // 受理业务
     while(!sigint_flag) {
-        int connfd = accept(listenfd, (struct sockaddr *)&server_addr, &server_addrlen);
+        int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &sclient_addrlen);
         if(connfd == -1) {
             if(errno == EINTR) {
                 waitpid(-1, NULL, 0);
@@ -157,12 +132,6 @@ int main(int argc, char** argv) {
         }
 
         // 获取客户端信息
-        struct sockaddr_in client_addr;
-        socklen_t client_addrlen = sizeof(client_addr);
-        if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
-            perror("getpeername error");
-            return 1;
-        }
         char client_ip[INET_ADDRSTRLEN];
         if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");

@@ -75,8 +75,8 @@ int main(int argc, char** argv) {
     pid_t pid = getpid();
 
     // 设置服务器地址
-    struct sockaddr_in server_addr;  
-    socklen_t server_addrlen = sizeof(server_addr);
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
     server_addr.sin_addr.s_addr = inet_addr(server_ip);
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     }
 
     // 请求连接
-    if(connect(connfd, (struct sockaddr*)&server_addr, server_addrlen) == -1) {
+    if(connect(connfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
         perror("connect error");
         return 1;
     }
