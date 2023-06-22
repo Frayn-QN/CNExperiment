@@ -122,10 +122,7 @@ int main(int argc, char** argv) {
     socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        perror("inet_pton error");
-        return 1;
-    }
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
     
 
     // 创建socket
@@ -148,12 +145,9 @@ int main(int argc, char** argv) {
     }
     printf("[srv](%d)[srv_sa](%s:%s)[vcd](%s) Server has initialized!\n", main_pid, server_ip, server_port, server_vcd);
 
-    struct sockaddr_in client_addr;
-    socklen_t client_addrlen = sizeof(client_addr);
     // 受理业务
     while(!sigint_flag) {
-        memset(&client_addr, 0, client_addrlen);
-        int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &client_addrlen);
+        int connfd = accept(listenfd, (struct sockaddr *)&server_addr, &server_addrlen);
         if(connfd == -1) {
             if(errno == EINTR) {
                 waitpid(-1, NULL, 0);
@@ -164,6 +158,12 @@ int main(int argc, char** argv) {
         }
 
         // 获取客户端信息
+        struct sockaddr_in client_addr;
+        socklen_t client_addrlen = sizeof(client_addr);
+        if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
+            perror("getpeername error");
+            return 1;
+        }
         char client_ip[INET_ADDRSTRLEN];
         if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");

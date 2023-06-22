@@ -75,14 +75,11 @@ int main(int argc, char** argv) {
     pid_t pid = getpid();
 
     // 设置服务器地址
-    struct sockaddr_in server_addr;
+    struct sockaddr_in server_addr;  
     socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
-        perror("inet_pton error");
-        return 1;
-    }
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
 
     // 创建socket
     int connfd = socket(AF_INET, SOCK_STREAM, 0);
