@@ -14,11 +14,24 @@
 
 void client_func(int connfd, int cid, pid_t pid) {
     while(1) {
-       char buf[MAXLINE] = {0};
+        char buf[MAXLINE] = {0};
 
-        if(fgets(buf, MAXLINE, stdin) == NULL) {
-            perror("fgets error");
-            break;
+        // 读取命令行
+        for (size_t i = 0; i < 60; i++)
+        {
+            char c = getchar();
+            if (c == '\n')
+            {
+                buf[i] = c;
+                buf[i+1] = 0;
+                break;
+            }
+            buf[i] = c;
+        }
+        
+        if(buf[59] != '\0' && buf[59] != '\n') {
+            buf[60] = '\n';
+            buf[61] = '\0';
         }
         printf("[cli](%d)[cid](%d)[ECH_RQT] %s", pid, cid, buf);
 

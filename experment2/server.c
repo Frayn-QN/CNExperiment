@@ -177,12 +177,13 @@ int main(int argc, char** argv) {
         child_pid = fork();
         if(child_pid == -1) {
             perror("fork error");
-            return 1;
+            close(connfd);
+            continue;
         }
         else if(child_pid == 0) {// 子进程
+            close(listenfd);
             child_pid = getpid();
             printf("[chd](%d)[ppid](%d) Client process is created!\n", child_pid, main_pid);
-            close(listenfd);
 
             server_func(connfd, atoi(server_vcd), child_pid);
 
@@ -192,11 +193,12 @@ int main(int argc, char** argv) {
             printf("[chd](%d)[ppid](%d) Client process is to return!\n", child_pid, main_pid);
             return 0;
         }
-
-        close(connfd);
+        else {
+            close(connfd);
+            waitpid(child_pid, NULL, 0);
+        }
     }
-    
-    wait(NULL);
+
     close(listenfd);
     printf("[srv](%d) listenfd is closed!\n", main_pid);
     printf("[srv](%d) server is to return!\n", main_pid);
