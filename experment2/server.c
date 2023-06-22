@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <netdb.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -12,7 +13,7 @@
 #include <sys/wait.h>
 
 #define MAXLINE 256
-#define MAXCONN 6
+#define MAXCONN 5
 
 int sigint_flag = 0;
 void handle_sigint(int sig) {
@@ -83,18 +84,48 @@ int main(int argc, char** argv) {
     pid_t main_pid = getpid();
     pid_t child_pid = 0;
 
+    // 信号处理
+    int res = -1;
     // 安装SIGINT信号处理器
-    struct sigaction sa;
-    sa.sa_flags = 0;
-    sa.sa_handler = handle_sigint;
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGINT, &sa, NULL);
+    struct sigaction sa_int, old_sa_int;
+    sa_int.sa_flags = 0;
+    sa_int.sa_handler = handle_sigint;
+    sigemptyset(&sa_int.sa_mask);
+    res = sigaction(SIGINT, &sa_int, &old_sa_int);
+    if(res) {
+        return -1;
+    }
+
+    // 安装SIGCHLD信号处理器
+    struct sigaction sa_chd, old_sa_chd;
+    sa_chd.sa_flags = 0;
+    sa_chd.sa_handler = handle_sigchld;
+    sigemptyset(&sa_chd.sa_mask);
+    res = sigaction(SIGCHLD, &sa_chd, &old_sa_chd);
+    if(res) {
+        return -2;
+    }
+
+    // 安装SIGPIPE信号处理器
+    struct sigaction sa_pipe, old_sa_pipe;
+    sa_pipe.sa_flags = 0;
+    sa_pipe.sa_flags |= SA_RESTART;
+    sa_pipe.sa_handler = handle_sigpipe;
+    sigemptyset(&sa_pipe.sa_mask);
+    res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
+    if(res) {
+        return -3;
+    }
 
     // 设置服务器地址
     struct sockaddr_in server_addr;
+    socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+    if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+        perror("inet_pton error");
+        return 1;
+    }
     
 
     // 创建socket
@@ -105,7 +136,7 @@ int main(int argc, char** argv) {
     }
 
     // 绑定socket
-    if(bind(listenfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+    if(bind(listenfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
         perror("bind error");
         return 1;
     }
@@ -132,6 +163,11 @@ int main(int argc, char** argv) {
         }
 
         // 获取客户端信息
+        
+        if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
+            perror("getpeername error");
+            return 1;
+        }
         char client_ip[INET_ADDRSTRLEN];
         if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");

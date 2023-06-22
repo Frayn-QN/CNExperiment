@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <netdb.h>
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -75,10 +76,13 @@ int main(int argc, char** argv) {
 
     // 设置服务器地址
     struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr));
+    socklen_t server_addrlen = sizeof(server_addr);
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
-    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+    if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
+        perror("inet_pton error");
+        return 1;
+    }
 
     // 创建socket
     int connfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -88,7 +92,7 @@ int main(int argc, char** argv) {
     }
 
     // 请求连接
-    if(connect(connfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+    if(connect(connfd, (struct sockaddr*)&server_addr, server_addrlen) == -1) {
         perror("connect error");
         return 1;
     }
