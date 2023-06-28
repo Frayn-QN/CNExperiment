@@ -4,9 +4,6 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
-#include <netdb.h>
-#include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
@@ -19,7 +16,7 @@ void client_func(int connfd, int cid, pid_t pid) {
         // 读取命令行
         if(fgets(buf, MAXLINE, stdin) == NULL) {
             perror("fgets error");
-            break;
+            exit(EXIT_FAILURE);
         }
         
         if(buf[59] != '\0' && buf[59] != '\n') {
@@ -41,7 +38,7 @@ void client_func(int connfd, int cid, pid_t pid) {
         memcpy(rep+2, buf, strlen(buf));
         if(write(connfd, rep, strlen(rep)) == -1) {
             perror("write error");
-            break;
+            exit(EXIT_FAILURE);
         }
         
         // 接收验证码
@@ -65,7 +62,7 @@ void client_func(int connfd, int cid, pid_t pid) {
 int main(int argc, char** argv) {
     if(argc != 4) {
         printf("Usage: %s <ip_address> <port> <cid>\n", argv[0]);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // 定义部分
@@ -74,24 +71,26 @@ int main(int argc, char** argv) {
     char* cid = argv[3];
     pid_t pid = getpid();
 
-    // 设置服务器地址
-    struct sockaddr_in server_addr;  
-    socklen_t server_addrlen = sizeof(server_addr);
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(atoi(server_port));
-    server_addr.sin_addr.s_addr = inet_addr(server_ip);
-
     // 创建socket
     int connfd = socket(AF_INET, SOCK_STREAM, 0);
     if(connfd == -1) {
         perror("socket error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
+    // 设置服务器地址
+    struct sockaddr_in server_addr;  
+    socklen_t server_addrlen = sizeof(server_addr);
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(atoi(server_port));
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+
+
     // 请求连接
-    if(connect(connfd, (struct sockaddr*)&server_addr, server_addrlen) == -1) {
+    if(connect(connfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
         perror("connect error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     printf("[cli](%d)[srv_sa](%s:%s) Server is connected!\n", pid, server_ip, server_port);

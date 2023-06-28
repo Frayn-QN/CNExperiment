@@ -129,19 +129,19 @@ int main(int argc, char** argv) {
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if(listenfd == -1) {
         perror("socket error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // 绑定socket
     if(bind(listenfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
         perror("bind error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // 监听
     if(listen(listenfd, MAXCONN) == -1) {
         perror("listen error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
     printf("[srv](%d)[srv_sa](%s:%s)[vcd](%s) Server has initialized!\n", main_pid, server_ip, server_port, server_vcd);
 
@@ -176,8 +176,7 @@ int main(int argc, char** argv) {
         child_pid = fork();
         if(child_pid == -1) {
             perror("fork error");
-            close(connfd);
-            continue;
+            exit(EXIT_FAILURE);
         }
         else if(child_pid == 0) {// 子进程
             close(listenfd);
@@ -199,7 +198,7 @@ int main(int argc, char** argv) {
 
     close(listenfd);
     printf("[srv](%d) listenfd is closed!\n", main_pid);
-    printf("[srv](%d) server is to return!\n", main_pid);
+    printf("[srv](%d) Server is to return!\n", main_pid);
 
     return 0;
 }
