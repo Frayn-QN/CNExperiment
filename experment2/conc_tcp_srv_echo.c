@@ -24,15 +24,16 @@ void handle_sigint(int sig) {
 void handle_sigchld(int sig) {
     pid_t child_pid;
     int stat;
-    printf("[srv](%d)[chd](%d) Child has terminated!\n", getppid(), getpid());
-    while((child_pid = waitpid(-1, &stat, WNOHANG)) > 0);
+    
+    while((child_pid = waitpid(-1, &stat, WNOHANG)) > 0) {
+        printf("[srv](%d)[chd](%d) Child has terminated!\n", getpid(), child_pid);
+    }
 }
 
 int sig_num = 0;
 void handle_sigpipe(int sig) {
     sig_num = sig;
-    pid_t main_pid = getpid();
-    printf("[srv](%d) SIGPIPE is coming!\n", main_pid);
+    printf("[srv](%d) SIGPIPE is coming!\n", getpid());
 }
 
 void server_func(int connfd, int vcd, pid_t pid) {
@@ -74,7 +75,7 @@ void server_func(int connfd, int vcd, pid_t pid) {
 int main(int argc, char** argv) {
     if(argc != 4) {
         printf("Usage: %s <ip_address> <port> <veri_code>\n", argv[0]);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // 定义部分
@@ -117,14 +118,6 @@ int main(int argc, char** argv) {
         return -3;
     }
 
-    // 设置服务器地址
-    struct sockaddr_in server_addr;
-    socklen_t server_addrlen = sizeof(server_addr);
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(atoi(server_port));
-    server_addr.sin_addr.s_addr = inet_addr(server_ip);
-    
-
     // 创建socket
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if(listenfd == -1) {
@@ -132,8 +125,15 @@ int main(int argc, char** argv) {
         exit(EXIT_FAILURE);
     }
 
+    // 设置服务器地址
+    struct sockaddr_in server_addr;
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(atoi(server_port));
+    server_addr.sin_addr.s_addr = inet_addr(server_ip);
+
     // 绑定socket
-    if(bind(listenfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
+    if(bind(listenfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("bind error");
         exit(EXIT_FAILURE);
     }
@@ -146,28 +146,25 @@ int main(int argc, char** argv) {
     printf("[srv](%d)[srv_sa](%s:%s)[vcd](%s) Server has initialized!\n", main_pid, server_ip, server_port, server_vcd);
 
     // 受理业务
+    struct sockaddr_in client_addr;
+    socklen_t client_addrlen;
     while(!sigint_flag) {
-        int connfd = accept(listenfd, (struct sockaddr *)&server_addr, &server_addrlen);
+        memset(&client_addr, 0, sizeof(client_addr));
+        int connfd = accept(listenfd, (struct sockaddr *)&client_addr, &client_addrlen);
         if(connfd == -1) {
             if(errno == EINTR) {
                 waitpid(-1, NULL, 0);
                 continue;
             }
             perror("accept error");
-            return 1;
+            exit(EXIT_FAILURE);
         }
 
         // 获取客户端信息
-        struct sockaddr_in client_addr;
-        socklen_t client_addrlen = sizeof(client_addr);
-        if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
-            perror("getpeername error");
-            return 1;
-        }
         char client_ip[INET_ADDRSTRLEN];
         if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");
-            return 1;
+            exit(EXIT_FAILURE);
         }
         int client_port = ntohs(client_addr.sin_port);
         printf("[srv](%d)[cli_sa](%s:%d) Client is accepted!\n", main_pid, client_ip, client_port);

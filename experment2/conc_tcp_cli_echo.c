@@ -45,7 +45,7 @@ void client_func(int connfd, int cid, pid_t pid) {
         short vcd_n = 0;
         if(read(connfd, &vcd_n, 2) == -1) {
             perror("read error");
-            break;
+            exit(EXIT_FAILURE);
         }
         short vcd_h = ntohs(vcd_n);
 
@@ -80,7 +80,6 @@ int main(int argc, char** argv) {
 
     // 设置服务器地址
     struct sockaddr_in server_addr;  
-    socklen_t server_addrlen = sizeof(server_addr);
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(atoi(server_port));
@@ -88,7 +87,7 @@ int main(int argc, char** argv) {
 
 
     // 请求连接
-    if(connect(connfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
+    if(connect(connfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("connect error");
         exit(EXIT_FAILURE);
     }
