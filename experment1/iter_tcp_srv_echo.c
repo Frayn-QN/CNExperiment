@@ -16,12 +16,12 @@ char* server_ip = NULL;
 char* server_port = NULL;
 char* server_vcd = NULL;
 
-truct node
+typedef struct node
 {
     int data;
-    node* lchild;
-    node* rchild;
-};
+    struct node* lchild;
+    struct node* rchild;
+}node;
 
 void print(int data) {
     if(data == 9) {
@@ -60,7 +60,7 @@ node *CreatTree()
 }
 
 //中序遍历
-int MidOrderTraverse( BiTNode *root, void (*visit)(int) )
+int MidOrderTraverse(node *root, void (*visit)(int) )
 {
 	if ( NULL == root)
 	{
@@ -175,8 +175,6 @@ void start() {
     close(listenfd);
     printf("[srv] listenfd is closed!\n");
     printf("[srv] server is to return!\n");
-
-    return 0;
 }
 
 int main(int argc, char** argv) {

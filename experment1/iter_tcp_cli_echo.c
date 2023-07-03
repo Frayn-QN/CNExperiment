@@ -15,12 +15,12 @@
 char* server_ip = NULL;
 char* server_port = NULL;
 
-truct node
+typedef struct node
 {
     int data;
-    node* lchild;
-    node* rchild;
-};
+    struct node* lchild;
+    struct node* rchild;
+}node;
 
 void print(int data) {
     if(data == 7) {
@@ -61,7 +61,7 @@ node *CreatTree()
 
 
 //先序遍历
-int  PreOrderTraverse( BiTNode *root, void (*visit)(int) )
+int  PreOrderTraverse(node *root, void (*visit)(int) )
 {
 	if ( NULL == root)
 	{
