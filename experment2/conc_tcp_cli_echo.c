@@ -8,6 +8,30 @@
 #include <arpa/inet.h>
 
 #define MAXLINE 80
+#define MAX_NODE 5
+
+char* server_ip = NULL;
+char* server_port = NULL;
+char* cid = NULL;
+pid_t pid = 0;
+
+int visited[MAX_NODE] = {0};
+
+void print(int node) {
+    if(node == 3) {
+        start();
+    }
+}
+
+void DFS(int node, int graph[MAX_NODE][MAX_NODE]) {
+    visited[node] = 1;
+    print(node);
+    for(int i = 0; i < MAX_NODE; i++) {
+        if(graph[node][i] == 1 && visited[i] == 0) {
+            DFS(i, graph);
+        }
+    }
+}
 
 void client_func(int connfd, int cid, pid_t pid) {
     while(1) {
@@ -59,18 +83,7 @@ void client_func(int connfd, int cid, pid_t pid) {
     }
 }
 
-int main(int argc, char** argv) {
-    if(argc != 4) {
-        printf("Usage: %s <ip_address> <port> <cid>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    // 定义部分
-    char* server_ip = argv[1];
-    char* server_port = argv[2];
-    char* cid = argv[3];
-    pid_t pid = getpid();
-
+void start() {
     // 创建socket
     int connfd = socket(AF_INET, SOCK_STREAM, 0);
     if(connfd == -1) {
@@ -101,5 +114,28 @@ int main(int argc, char** argv) {
     close(connfd);
     printf("[cli](%d) connfd is closed!\n", pid);
     printf("[cli](%d) Client is to return!\n", pid);
+}
+
+int main(int argc, char** argv) {
+    if(argc != 4) {
+        printf("Usage: %s <ip_address> <port> <cid>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // 定义部分
+    server_ip = argv[1];
+    server_port = argv[2];
+    cid = argv[3];
+    pid = getpid();
+
+    int graph[MAX_NODE][MAX_NODE] = {
+        {0, 1, 1, 0, 0},
+        {1, 0, 1, 0, 0},
+        {1, 1, 0, 1, 0},
+        {0, 0, 1, 0, 1},
+        {0, 0, 0, 1, 0}
+    };
+    DFS(0, graph);
+
     return 0;
 }

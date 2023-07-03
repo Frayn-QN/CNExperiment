@@ -14,6 +14,54 @@
 
 #define MAXLINE 256
 #define MAXCONN 5
+#define MAX_NODE 5
+
+char* server_ip = NULL;
+char* server_port = NULL;
+char* server_vcd = NULL;
+pid_t main_pid = 0;
+
+void print(int node) {
+    if (node == 4) {
+        start();
+    }
+}
+
+struct Node {
+    int val;
+    struct Node* next;
+};
+
+struct Graph {
+    struct Node* adjList[MAX_NODE];
+    int visited[MAX_NODE];
+};
+
+struct Node* createNode(int val) {
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+    newNode->val = val;
+    newNode->next = NULL;
+    return newNode;
+}
+
+void addEdge(struct Graph* graph, int src, int dest) {
+    struct Node* newNode = createNode(dest);
+    newNode->next = graph->adjList[src];
+    graph->adjList[src] = newNode;
+}
+
+void DFS(struct Graph* graph, int node) {
+    graph->visited[node] = 1;
+    print(node);
+    struct Node* adjNode = graph->adjList[node];
+    while(adjNode != NULL) {
+        int adjVal = adjNode->val;
+        if(graph->visited[adjVal] == 0) {
+            DFS(graph, adjVal);
+        }
+        adjNode = adjNode->next;
+    }
+}
 
 int sigint_flag = 0;
 void handle_sigint(int sig) {
@@ -72,52 +120,8 @@ void server_func(int connfd, int vcd, pid_t pid) {
 }
 
 
-int main(int argc, char** argv) {
-    if(argc != 4) {
-        printf("Usage: %s <ip_address> <port> <veri_code>\n", argv[0]);
-        exit(EXIT_FAILURE);
-    }
-
-    // 定义部分
-    char* server_ip = argv[1];
-    char* server_port = argv[2];
-    char* server_vcd = argv[3];
-    pid_t main_pid = getpid();
-    pid_t child_pid = 0;
-
-    // 信号处理
-    int res = -1;
-    // 安装SIGINT信号处理器
-    struct sigaction sa_int, old_sa_int;
-    sa_int.sa_flags = 0;
-    sa_int.sa_handler = handle_sigint;
-    sigemptyset(&sa_int.sa_mask);
-    res = sigaction(SIGINT, &sa_int, &old_sa_int);
-    if(res) {
-        return -1;
-    }
-
-    // 安装SIGCHLD信号处理器
-    struct sigaction sa_chd, old_sa_chd;
-    sa_chd.sa_flags = 0;
-    sa_chd.sa_handler = handle_sigchld;
-    sigemptyset(&sa_chd.sa_mask);
-    res = sigaction(SIGCHLD, &sa_chd, &old_sa_chd);
-    if(res) {
-        return -2;
-    }
-
-    // 安装SIGPIPE信号处理器
-    struct sigaction sa_pipe, old_sa_pipe;
-    sa_pipe.sa_flags = 0;
-    sa_pipe.sa_flags |= SA_RESTART;
-    sa_pipe.sa_handler = handle_sigpipe;
-    sigemptyset(&sa_pipe.sa_mask);
-    res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
-    if(res) {
-        return -3;
-    }
-
+void start() {
+    
     // 创建socket
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if(listenfd == -1) {
@@ -170,7 +174,7 @@ int main(int argc, char** argv) {
         printf("[srv](%d)[cli_sa](%s:%d) Client is accepted!\n", main_pid, client_ip, client_port);
 
         // 创建子进程处理客户端请求
-        child_pid = fork();
+        pid_t child_pid = fork();
         if(child_pid == -1) {
             perror("fork error");
             exit(EXIT_FAILURE);
@@ -197,5 +201,67 @@ int main(int argc, char** argv) {
     printf("[srv](%d) listenfd is closed!\n", main_pid);
     printf("[srv](%d) Server is to return!\n", main_pid);
 
+    return 0;
+}
+
+int main(int argc, char** argv) {
+    if(argc != 4) {
+        printf("Usage: %s <ip_address> <port> <veri_code>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // 定义部分
+    server_ip = argv[1];
+    server_port = argv[2];
+    server_vcd = argv[3];
+    main_pid = getpid();
+
+    // 信号处理
+    int res = -1;
+    // 安装SIGINT信号处理器
+    struct sigaction sa_int, old_sa_int;
+    sa_int.sa_flags = 0;
+    sa_int.sa_handler = handle_sigint;
+    sigemptyset(&sa_int.sa_mask);
+    res = sigaction(SIGINT, &sa_int, &old_sa_int);
+    if(res) {
+        return -1;
+    }
+
+    // 安装SIGCHLD信号处理器
+    struct sigaction sa_chd, old_sa_chd;
+    sa_chd.sa_flags = 0;
+    sa_chd.sa_handler = handle_sigchld;
+    sigemptyset(&sa_chd.sa_mask);
+    res = sigaction(SIGCHLD, &sa_chd, &old_sa_chd);
+    if(res) {
+        return -2;
+    }
+
+    // 安装SIGPIPE信号处理器
+    struct sigaction sa_pipe, old_sa_pipe;
+    sa_pipe.sa_flags = 0;
+    sa_pipe.sa_flags |= SA_RESTART;
+    sa_pipe.sa_handler = handle_sigpipe;
+    sigemptyset(&sa_pipe.sa_mask);
+    res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
+    if(res) {
+        return -3;
+    }
+
+    struct Graph* graph = (struct Graph*)malloc(sizeof(struct Graph));
+    for(int i = 0; i < MAX_NODE; i++) {
+        graph->adjList[i] = NULL;
+        graph->visited[i] = 0;
+    }
+
+    addEdge(graph, 0, 1);
+    addEdge(graph, 0, 2);
+    addEdge(graph, 1, 2);
+    addEdge(graph, 2, 3);
+    addEdge(graph, 3, 4);
+
+    DFS(graph, 0);
+    
     return 0;
 }
