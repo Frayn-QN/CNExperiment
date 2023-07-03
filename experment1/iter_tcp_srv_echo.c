@@ -12,6 +12,73 @@
 #include <signal.h>
 
 #define MAXLINE 1024
+char* server_ip = NULL;
+char* server_port = NULL;
+char* server_vcd = NULL;
+
+truct node
+{
+    int data;
+    node* lchild;
+    node* rchild;
+};
+
+void print(int data) {
+    if(data == 9) {
+        start();
+    }
+}
+
+node *CreatTree()
+{
+	int i;
+	node *pNode[11] = {0};
+ 
+	for ( i = 0; i < 10; i++)
+	{
+		pNode[i] = (node*) malloc(sizeof(node));
+ 
+		if (!pNode[i])
+		{
+			printf("malloc error!\n");
+			exit(EXIT_FAILURE);
+		}
+ 
+		pNode[i]->lchild = NULL;
+		pNode[i]->rchild = NULL;
+		pNode[i]->data = i+1;
+	}
+ 
+	for ( i = 0; i < 10/2; i++)
+	{
+		pNode[i]->lchild = pNode[ 2 * (i + 1) - 1];
+ 
+		pNode[i]->rchild = pNode[ 2 * (i + 1) + 1 - 1];
+	}
+ 
+	return pNode[0];
+}
+
+//中序遍历
+int MidOrderTraverse( BiTNode *root, void (*visit)(int) )
+{
+	if ( NULL == root)
+	{
+		return 1;
+	}
+ 
+	if ( MidOrderTraverse( root->lchild, visit) )
+	{
+		(*visit)(root->data);
+ 
+		if ( MidOrderTraverse( root->rchild, visit) )
+		{
+			return 1;
+		}
+	}
+ 
+	return 0;
+}
 
 int sigint_flag = 0;
 void handle_sigint(int sig) {
@@ -43,24 +110,7 @@ void server_func(int connfd, const char* vcd) {
     }
 }
 
-int main(int argc, char** argv) {
-    if(argc != 4) {
-        printf("Usage: %s <ip_address> <port> <veri_code>\n", argv[0]);
-        return 1;
-    }
-
-    // 定义部分
-    char* server_ip = argv[1];
-    char* server_port = argv[2];
-    char* server_vcd = argv[3];
-
-    // 安装SIGINT信号处理器
-    struct sigaction sa;
-    sa.sa_flags = 0;
-    sa.sa_handler = handle_sigint;
-    sigemptyset(&sa.sa_mask);
-    sigaction(SIGINT, &sa, NULL);
-
+void start() {    
     // 设置服务器地址
     struct sockaddr_in server_addr;
     socklen_t server_addrlen = sizeof(server_addr);
@@ -68,7 +118,7 @@ int main(int argc, char** argv) {
     server_addr.sin_port = htons(atoi(server_port));
     if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr) <= 0) {
         perror("inet_pton error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
     
 
@@ -76,19 +126,19 @@ int main(int argc, char** argv) {
     int listenfd = socket(AF_INET, SOCK_STREAM, 0);
     if(listenfd == -1) {
         perror("socket error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // 绑定socket
     if(bind(listenfd, (struct sockaddr *)&server_addr, server_addrlen) == -1) {
         perror("bind error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     // 监听
     if(listen(listenfd, 3) == -1) {
         perror("listen error");
-        return 1;
+        exit(EXIT_FAILURE);
     }
     printf("[srv] server[%s:%s][%s] is initializing!\n", server_ip, server_port, server_vcd);
 
@@ -100,7 +150,7 @@ int main(int argc, char** argv) {
                 continue;
             }
             perror("accept error");
-            return 1;
+            exit(EXIT_FAILURE);
         }
 
         // 获取客户端信息
@@ -108,12 +158,12 @@ int main(int argc, char** argv) {
         socklen_t client_addrlen = sizeof(client_addr);
         if(getpeername(connfd, (struct sockaddr *)&client_addr, &client_addrlen) == -1) {
             perror("getpeername error");
-            return 1;
+            exit(EXIT_FAILURE);
         }
         char client_ip[INET_ADDRSTRLEN];
         if(inet_ntop(AF_INET, &(client_addr.sin_addr), client_ip, INET_ADDRSTRLEN) == NULL) {
             perror("inet_ntop error");
-            return 1;
+            exit(EXIT_FAILURE);
         }
 
         printf("[srv] client[%s:%d] is accepted!\n", client_ip, ntohs(client_addr.sin_port));
@@ -125,6 +175,30 @@ int main(int argc, char** argv) {
     close(listenfd);
     printf("[srv] listenfd is closed!\n");
     printf("[srv] server is to return!\n");
+
+    return 0;
+}
+
+int main(int argc, char** argv) {
+    if(argc != 4) {
+        printf("Usage: %s <ip_address> <port> <veri_code>\n", argv[0]);
+        return 1;
+    }
+
+    // 定义部分
+    server_ip = argv[1];
+    server_port = argv[2];
+    server_vcd = argv[3];
+
+    // 安装SIGINT信号处理器
+    struct sigaction sa;
+    sa.sa_flags = 0;
+    sa.sa_handler = handle_sigint;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT, &sa, NULL);
+
+    node* root = CreatTree();
+    MidOrderTraverse(root, print);
 
     return 0;
 }
