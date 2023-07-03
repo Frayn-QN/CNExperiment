@@ -238,16 +238,16 @@ int main(int argc, char** argv) {
         return -2;
     }
 
-    // 安装SIGPIPE信号处理器
-    struct sigaction sa_pipe, old_sa_pipe;
-    sa_pipe.sa_flags = 0;
-    sa_pipe.sa_flags |= SA_RESTART;
-    sa_pipe.sa_handler = handle_sigpipe;
-    sigemptyset(&sa_pipe.sa_mask);
-    res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
-    if(res) {
-        return -3;
-    }
+    // // 安装SIGPIPE信号处理器
+    // struct sigaction sa_pipe, old_sa_pipe;
+    // sa_pipe.sa_flags = 0;
+    // sa_pipe.sa_flags |= SA_RESTART;
+    // sa_pipe.sa_handler = handle_sigpipe;
+    // sigemptyset(&sa_pipe.sa_mask);
+    // res = sigaction(SIGPIPE, &sa_pipe, &old_sa_pipe);
+    // if(res) {
+    //     return -3;
+    // }
 
     struct Graph* graph = (struct Graph*)malloc(sizeof(struct Graph));
     for(int i = 0; i < MAX_NODE; i++) {
@@ -262,6 +262,6 @@ int main(int argc, char** argv) {
     addEdge(graph, 3, 4);
 
     DFS(graph, 0);
-    
+
     return 0;
 }
